@@ -237,14 +237,22 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        // Proveravamo stvarnu poziciju u istoriji preko indeksa da sprečimo vrtenje u krug
         android.webkit.WebBackForwardList history = webView.copyBackForwardList();
         int currentIndex = history.getCurrentIndex();
 
         // Ako smo na početku (indeks 0) ili nemamo gde nazad:
         if (currentIndex <= 0 || !webView.canGoBack()) {
-            setEnabled(false);
-            finish(); // Čisto gašenje - isFinishing() postaje true, onStop() ne pali servis, a onDestroy gasi audio i WebView bez crnog ekrana!
+            // 1. Zaustavi pozadinski servis i ukloni notifikaciju
+            try {
+                Intent serviceIntent = new Intent(MainActivity.this, MediaService.class);
+                stopService(serviceIntent);
+            } catch (Exception ignored) {}
+
+            // 2. Ugasi aktivnost i fizički ubij proces aplikacije iz memorije
+            // Ovo osigurava da sledeći put kreće potpuno od nule sa splash screen-om!
+            finish();
+            android.os.Process.killProcess(android.os.Process.myPid());
+            System.exit(0);
         } else {
             // Ako ima gde nazad, vrati stranicu
             webView.goBack();
