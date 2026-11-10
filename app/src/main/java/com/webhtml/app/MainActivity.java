@@ -237,11 +237,13 @@ public class MainActivity extends AppCompatActivity {
                     return;
                 }
 
+                // Proveravamo stvarnu poziciju u istoriji preko indeksa da sprečimo vrtenje u krug
                 android.webkit.WebBackForwardList history = webView.copyBackForwardList();
                 int currentIndex = history.getCurrentIndex();
 
+                // Ako smo na početku (indeks 0) ili nemamo gde nazad:
                 if (currentIndex <= 0 || !webView.canGoBack()) {
-                    // 1. Zaustavi pozadinski servis i ukloni notifikaciju odmah
+                    // 1. Zaustavi pozadinski servis i notifikaciju odmah da ne svira u pozadini
                     try {
                         Intent serviceIntent = new Intent(MainActivity.this, MediaService.class);
                         stopService(serviceIntent);
@@ -253,10 +255,11 @@ public class MainActivity extends AppCompatActivity {
                         webView.pauseTimers();
                     }
 
-                    // 3. Ugasi aktivnost skroz (nema pozadine, nema blicanja pri sledećem pokretanju)
+                    // 3. Ugasi aplikaciju skroz
                     setEnabled(false);
-                    finish();
+                    finish(); 
                 } else {
+                    // Ako ima gde nazad, vrati stranicu
                     webView.goBack();
                 }
             }
@@ -383,6 +386,7 @@ public class MainActivity extends AppCompatActivity {
                         view.evaluateJavascript("window.webhtml = true;", null);
                     }
                     
+                    // AGRESIVNA JS ZAŠTITA - SPREČAVA GASENJE PLEJERA KADA JE background: true
                     if (background) {
                         String antiPauseJs = 
                             "(function() {" +
@@ -412,7 +416,7 @@ public class MainActivity extends AppCompatActivity {
                             "           }" +
                             "       }, 500);" +
                             "   } catch(err) {}" +
-                            })();";
+                            "})();";
                             
                         view.evaluateJavascript(antiPauseJs, null);
                     }
@@ -572,6 +576,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        // Traženje dozvole za notifikacije na Androidu 13+ ISKLJUČIVO ako je background uključen
         if (background && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (androidx.core.content.ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
                 androidx.core.app.ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 102);
@@ -795,21 +800,21 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onStop() {
-        super.onStop();
-        
-        // Servis se pali SAMO ako je background uključen i aktivnost se NE gasi 
-        // (Znači, pritisnut je Home ili Recents, a NE Back dugme!)
-        if (background && !isFinishing()) {
-            try {
-                Intent serviceIntent = new Intent(this, MediaService.class);
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    startForegroundService(serviceIntent);
-                } else {
-                    startService(serviceIntent);
-                }
-            } catch (Exception ignored) {}
-        }
+    super.onStop();
+    
+    // Servis se pali SAMO ako je background uključen 
+    // I ako se aktivnost NE gasi (zato što je pritisnut Home ili Recents, a NE Back!)
+    if (background && !isFinishing()) {
+        try {
+            Intent serviceIntent = new Intent(this, MediaService.class);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(serviceIntent);
+            } else {
+                startService(serviceIntent);
+            }
+        } catch (Exception ignored) {}
     }
+}
 
     @Override
     protected void onPause() {
@@ -825,12 +830,10 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (webView != null) {
-            webView.onResume();
-            webView.resumeTimers();
-        }
+        if (webView != null) webView.onResume();
         if (overlayWebView != null) overlayWebView.onResume();
         
+        // Čim se korisnik vrati u aplikaciju, gasimo pozadinski servis i sklanjamo notifikaciju
         if (background) {
             try {
                 Intent serviceIntent = new Intent(this, MediaService.class);
