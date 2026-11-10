@@ -374,47 +374,27 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onPageFinished(WebView view, String url) {
-                super.onPageFinished(view, url);
+            super.onPageFinished(view, url);
                 
                 if (view == webView) {
-                    if (url != null && url.startsWith("file://")) {
-                        view.evaluateJavascript("window.webhtml = true;", null);
-                    }
+                if (url != null && url.startsWith("file://")) {
+                view.evaluateJavascript("window.webhtml = true;", null);
+                }
                     
-                    // AGRESIVNA JS ZAŠTITA - SPREČAVA GASENJE PLEJERA KADA JE background: true
-                    if (background) {
-                        String antiPauseJs = 
-                            "(function() {" +
-                            "   try {" +
-                            "       Object.defineProperty(document, 'hidden', { get: function() { return false; }, configurable: true });" +
-                            "       Object.defineProperty(document, 'visibilityState', { get: function() { return 'visible'; }, configurable: true });" +
-                            "       Object.defineProperty(document, 'webkitHidden', { get: function() { return false; }, configurable: true });" +
-                            "       Object.defineProperty(document, 'webkitVisibilityState', { get: function() { return 'visible'; }, configurable: true });" +
-                            "       " +
-                            "       window.addEventListener('visibilitychange', function(e) { e.stopImmediatePropagation(); }, true);" +
-                            "       document.addEventListener('visibilitychange', function(e) { e.stopImmediatePropagation(); }, true);" +
-                            "       window.addEventListener('blur', function(e) { e.stopImmediatePropagation(); }, true);" +
-                            "       window.addEventListener('pagehide', function(e) { e.stopImmediatePropagation(); }, true);" +
-                            "       " +
-                            "       setInterval(function() {" +
-                            "           if (document.hidden) {" +
-                            "               Object.defineProperty(document, 'hidden', { get: function() { return false; }, configurable: true });" +
-                            "           }" +
-                            "           if (document.visibilityState !== 'visible') {" +
-                            "               Object.defineProperty(document, 'visibilityState', { get: function() { return 'visible'; }, configurable: true });" +
-                            "           }" +
-                            "           var videos = document.querySelectorAll('video, audio');" +
-                            "           for(var i=0; i<videos.length; i++) {" +
-                            "               if(videos[i].paused && videos[i].currentTime > 0 && !videos[i].ended && videos[i].readyState > 2) {" +
-                            "                   videos[i].play().catch(function(e){});" +
-                            "               }" +
-                            "           }" +
-                            "       }, 500);" +
-                            "   } catch(err) {}" +
-                            "})();";
-                            
-                        view.evaluateJavascript(antiPauseJs, null);
-                    }
+               // AGRESIVNA JS ZAŠTITA - BACKGROUND PLAY..
+               if (background) {
+               String antiPauseJs = 
+               "(function() {" +
+               "   try {" +
+               "       Object.defineProperty(document, 'hidden', { get: function() { return false; }, configurable: true });" +
+               "       Object.defineProperty(document, 'visibilityState', { get: function() { return 'visible'; }, configurable: true });" +
+               "       Object.defineProperty(document, 'webkitHidden', { get: function() { return false; }, configurable: true });" +
+               "       Object.defineProperty(document, 'webkitVisibilityState', { get: function() { return 'visible'; }, configurable: true });" +
+               "       } catch(err) {}" +
+               "       })();";
+        
+               view.evaluateJavascript(antiPauseJs, null);
+                   }
                 }
             }
             
