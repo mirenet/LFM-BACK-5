@@ -230,40 +230,27 @@ public class MainActivity extends AppCompatActivity {
         webView.addJavascriptInterface(new ConfigSaverInterface(this), "AndroidBridgeSaver");
 
         getOnBackPressedDispatcher().addCallback(this, new androidx.activity.OnBackPressedCallback(true) {
-            @Override
-            public void handleOnBackPressed() {
-                if (menuControler != null && menuControler.isMenuVisible()) {
-                    menuControler.toggleMenu();
-                    return;
-                }
+        @Override
+        public void handleOnBackPressed() {
+        if (menuControler != null && menuControler.isMenuVisible()) {
+            menuControler.toggleMenu();
+            return;
+        }
 
-                // Proveravamo stvarnu poziciju u istoriji preko indeksa da sprečimo vrtenje u krug
-                android.webkit.WebBackForwardList history = webView.copyBackForwardList();
-                int currentIndex = history.getCurrentIndex();
+        // Proveravamo stvarnu poziciju u istoriji preko indeksa da sprečimo vrtenje u krug
+        android.webkit.WebBackForwardList history = webView.copyBackForwardList();
+        int currentIndex = history.getCurrentIndex();
 
-                // Ako smo na početku (indeks 0) ili nemamo gde nazad:
-                if (currentIndex <= 0 || !webView.canGoBack()) {
-                    // 1. Zaustavi pozadinski servis i notifikaciju odmah da ne svira u pozadini
-                    try {
-                        Intent serviceIntent = new Intent(MainActivity.this, MediaService.class);
-                        stopService(serviceIntent);
-                    } catch (Exception ignored) {}
-
-                    // 2. Pauziraj WebView da stane audio u stranici
-                    if (webView != null) {
-                        webView.onPause();
-                        webView.pauseTimers();
-                    }
-
-                    // 3. Ugasi aplikaciju skroz
-                    setEnabled(false);
-                    finish(); 
-                } else {
-                    // Ako ima gde nazad, vrati stranicu
-                    webView.goBack();
-                }
-            }
-        });
+        // Ako smo na početku (indeks 0) ili nemamo gde nazad:
+        if (currentIndex <= 0 || !webView.canGoBack()) {
+            setEnabled(false);
+            finish(); // Čisto gašenje - isFinishing() postaje true, onStop() ne pali servis, a onDestroy gasi audio i WebView bez crnog ekrana!
+        } else {
+            // Ako ima gde nazad, vrati stranicu
+            webView.goBack();
+        }
+    }
+});
 
         webView.setDownloadListener((url, userAgent, contentDisposition, mimetype, contentLength) -> {
             String rawSuggestedName = android.webkit.URLUtil.guessFileName(url, contentDisposition, mimetype);
