@@ -50,6 +50,14 @@ public class MediaService extends Service {
         return null;
     }
 
+    // Ugasi servis i notifikaciju kada se app ukloni iz Recents-a..
+    @Override
+    public void onTaskRemoved(Intent rootIntent) {
+        super.onTaskRemoved(rootIntent);
+        stopForeground(true);
+        stopSelf();
+    }
+
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel serviceChannel = new NotificationChannel(
