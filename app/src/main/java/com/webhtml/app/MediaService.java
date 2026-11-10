@@ -36,13 +36,14 @@ public class MediaService extends Service {
                 .setContentTitle("LFM APP")
                 .setContentText("Working in background...")
                 .setSmallIcon(android.R.drawable.ic_media_play)
-                .setContentIntent(pendingIntent) // <--- OVO VRAĆA U APLIKACIJU
+                .setContentIntent(pendingIntent)
                 .setAutoCancel(true)
                 .build();
 
         startForeground(1, notification);
 
-        return START_STICKY;
+        // VAŽNO: Sprečava Android da samostalno oživi servis nakon uklanjanja iz Recents-a
+        return START_NOT_STICKY;
     }
 
     @Override
@@ -50,12 +51,17 @@ public class MediaService extends Service {
         return null;
     }
 
-    // Ugasi servis i notifikaciju kada se app ukloni iz Recents-a..
     @Override
     public void onTaskRemoved(Intent rootIntent) {
         super.onTaskRemoved(rootIntent);
+        
+        // 1. Ukloni notifikaciju i ugasi servis
         stopForeground(true);
         stopSelf();
+        
+        // 2. Fizički ubij proces aplikacije da ne ostane u kešu
+        android.os.Process.killProcess(android.os.Process.myPid());
+        System.exit(0);
     }
 
     private void createNotificationChannel() {
