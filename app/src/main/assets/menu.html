@@ -75,7 +75,7 @@ button:focus, button:active, input:focus, textarea:focus {
     align-items: center;
     justify-content: center;
     margin-top: -6px;
-    margin-bottom: 20px;
+    margin-bottom: 55px;
     width: 100%;
 }
 
@@ -126,75 +126,6 @@ button:focus, button:active, input:focus, textarea:focus {
     stroke-linecap: round;
     stroke-linejoin: round;
     fill: none;
-}
-
-/* Input groups */
-.input-group {
-    margin-bottom: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    width: 100%;
-    box-sizing: border-box;
-}
-
-.url-input-wrapper {
-    position: relative;
-    width: 100%;
-    display: flex;
-    align-items: center;
-}
-
-.input-group input[type="text"] {
-    width: 100%;
-    padding: 10px 38px 10px 10px;
-    margin-top: 4px;
-    border-radius: 10px;
-    background: #1A1A1A;
-    color: #9E9DA4;
-    border: none;
-    box-sizing: border-box;
-    font-size: 14px; 
-    outline: none;
-    box-shadow: 0 0 0 0.8px #606060;
-    font-family: Inter, Arial, sans-serif;
-}
-
-.input-group input[type="text"]:focus {
-    outline: 1px solid #888888 !important;
-    box-shadow: 0 0 0 0.8px #606060 !important;
-    color: #FFFFFF;
-}
-
-/* Ikonica foldera u inputu */
-.file-browse-btn {
-    position: absolute;
-    right: 6px;
-    top: 54%;
-    transform: translateY(-50%);
-    background: transparent;
-    border: none;
-    color: #8B8B8B;
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    outline: none;
-    transition: background 0.15s, color 0.15s;
-}
-
-.file-browse-btn.touched {
-    background: rgba(203, 216, 104, 0.1);
-    color: #CBD868;
-}
-
-.file-browse-btn svg {
-    width: 16px;
-    height: 16px;
-    fill: currentColor;
 }
 
 .checkbox-row {
@@ -291,7 +222,7 @@ button:focus, button:active, input:focus, textarea:focus {
     appearance: none;
 }
 
-.row button.force-hover, .settings-icon-btn.force-hover {
+.row button.force-hover {
     filter: brightness(1.25);
     box-shadow: 0 3px 10px rgba(0,0,0,0.3);
 }
@@ -312,7 +243,7 @@ button:focus, button:active, input:focus, textarea:focus {
 <!-- GLAVNI MENI POPUP -->
 <div class="popup" id="mainPopup">
     <div class="popup-header">
-        <h3 id="popupTitle">Settings</h3>
+        <h3 id="popupTitle">Load Html</h3>
         <button id="openConfigBtn" class="settings-icon-btn" title="Edit config">
             <svg viewBox="0 0 24 24">
                 <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
@@ -321,18 +252,6 @@ button:focus, button:active, input:focus, textarea:focus {
         </button>
     </div>
     
-    <div class="input-group">
-        <div class="url-input-wrapper">
-            <input type="text" id="startUrlInput" placeholder="Select html or enter url..">
-            <button type="button" class="file-browse-btn" id="browseFileBtn" title="Load local HTML file">
-                <svg viewBox="0 0 24 24">
-                    <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
-                </svg>
-            </button>
-            <input type="file" id="htmlFileInput" class="hidden-file-input" accept=".html,.htm">
-        </div>
-    </div>
-
     <div id="checkboxContainer" class="checkbox-row">
         <label>
             <input type="checkbox" id="clearDataCheckbox">
@@ -448,20 +367,6 @@ async function initPreferences() {
 const configModal = document.getElementById("configModal");
 const mainPopup = document.getElementById("mainPopup");
 const configTextArea = document.getElementById("configTextArea");
-const startUrlInput = document.getElementById("startUrlInput");
-const htmlFileInput = document.getElementById("htmlFileInput");
-const browseFileBtn = document.getElementById("browseFileBtn");
-
-// Inicijalno popunjavanje input polja (startURL iz konfiguracije ili sačuvani naziv fajla)
-if (typeof window.startURL === 'string' && window.startURL.trim() !== '') {
-    startUrlInput.value = window.startURL;
-} else {
-    getSavedApp().then(saved => {
-        if (saved && saved.name) {
-            startUrlInput.value = saved.name;
-        }
-    });
-}
 
 function clearAllFocus() {
     document.querySelectorAll("button").forEach(b => {
@@ -508,8 +413,6 @@ if (!isMenuOverlay) {
             document.open();
             document.write(saved.content);
             document.close();
-        } else if (typeof window.startURL === 'string' && window.startURL.trim() !== '') {
-            return;
         } else {
             mainPopup.style.display = "flex";
             setTimeout(clearAllFocus, 10);
@@ -521,9 +424,8 @@ if (!isMenuOverlay) {
 }
 
 document.addEventListener("touchstart", function(e) {
-    const btn = e.target.closest('button');
-    if (btn) {
-        btn.classList.add("force-hover");
+    if (e.target.tagName === 'BUTTON') {
+        e.target.classList.add("force-hover");
     }
 }, {passive: true});
 
@@ -535,112 +437,69 @@ document.addEventListener("touchcancel", function(e) {
     clearAllFocus();
 }, {passive: true});
 
-// Klik na ikonicu foldera otvara dijalog za izbor fajla
-browseFileBtn.addEventListener("click", function(){
-    browseFileBtn.blur();
-    browseFileBtn.classList.remove("force-hover");
-    htmlFileInput.click();
-});
-
-let selectedFileObject = null;
-
-htmlFileInput.addEventListener("change", function(event){
-    const file = event.target.files[0];
-    if(file){
-        const fileName = file.name ? file.name.toLowerCase() : "";
-        if(file.type === "text/html" || file.type === "" || fileName.endsWith(".html") || fileName.endsWith(".htm")){
-            selectedFileObject = file;
-            startUrlInput.value = file.name;
-        } else {
-            alert("Please select a valid HTML file.");
-        }
-    }
-});
-
-// LOGIKA ZA LOAD DUGME (Kompatibilna sa MainActivity.java metodama)
-document.getElementById("loadBtn").addEventListener("click", async function(){
+document.getElementById("loadBtn").addEventListener("click", function(){
     clearAllFocus();
 
-    const clearCheckbox = document.getElementById("clearDataCheckbox");
-    const shouldClearData = clearCheckbox && clearCheckbox.checked;
+    let fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = ".html,.htm";
+    fileInput.style.display = "none";
+    document.body.appendChild(fileInput);
 
-    if (shouldClearData) {
-        if (window.AndroidBridgeSaver && typeof window.AndroidBridgeSaver.clearAppCacheAndData === 'function') {
-            window.AndroidBridgeSaver.clearAppCacheAndData();
-        }
-        try {
-            localStorage.clear();
-            sessionStorage.clear();
-            document.cookie.split(";").forEach(function(c) { 
-                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
-            });
-            if ('caches' in window) {
-                const cacheNames = await caches.keys();
-                for (const name of cacheNames) {
-                    await caches.delete(name);
+    fileInput.addEventListener("change", async function(event){
+        const file = event.target.files[0];
+        if(file){
+            const fileName = file.name ? file.name.toLowerCase() : "";
+            if(file.type === "text/html" || file.type === "" || fileName.endsWith(".html") || fileName.endsWith(".htm")){
+                const clearCheckbox = document.getElementById("clearDataCheckbox");
+                const shouldClearData = clearCheckbox && clearCheckbox.checked;
+
+                if (shouldClearData) {
+                    try {
+                        localStorage.clear();
+                        sessionStorage.clear();
+                        document.cookie.split(";").forEach(function(c) { 
+                            document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+                        });
+                        if ('caches' in window) {
+                            const cacheNames = await caches.keys();
+                            for (const name of cacheNames) {
+                                await caches.delete(name);
+                            }
+                        }
+                    } catch(err) {}
                 }
-            }
-        } catch(err) {}
-    }
 
-    const inputValue = startUrlInput.value.trim();
+                if (window.AndroidBridgeSaver && typeof window.AndroidBridgeSaver.clearStartUrl === 'function') {
+                    window.AndroidBridgeSaver.clearStartUrl();
+                }
 
-    // 1. Ako je unet URL (https:// ili http://) -> Upisujemo u startURL unutar appConfig.js koristeći postojeće Java metode
-    if (inputValue.startsWith("http://") || inputValue.startsWith("https://")) {
-        await clearSavedApp();
+                await clearSavedApp();
 
-        if (window.AndroidBridgeSaver && typeof window.AndroidBridgeSaver.loadConfigFileRaw === 'function') {
-            let rawConfig = window.AndroidBridgeSaver.loadConfigFileRaw();
-            // Ažuriramo startURL u konfiguracionom fajlu
-            if (rawConfig.includes("startURL")) {
-                rawConfig = rawConfig.replace(/startURL\s*:\s*["'][^"']*["']/g, 'startURL: "' + inputValue + '"');
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    const htmlContent = e.target.result;
+                    
+                    await saveApp(htmlContent, file.name);
+
+                    if (window.AndroidMenuBridge && typeof window.AndroidMenuBridge.closeMenu === 'function') {
+                        window.AndroidMenuBridge.closeMenu();
+                    }
+
+                    if (window.AndroidBridgeSaver && typeof window.AndroidBridgeSaver.reloadMainApp === 'function') {
+                        window.AndroidBridgeSaver.reloadMainApp();
+                    } else {
+                        location.reload();
+                    }
+                };
+                reader.readAsText(file);
             } else {
-                rawConfig = rawConfig.replace(/\{/, '{\n    startURL: "' + inputValue + '",');
+                alert("Please select a valid HTML file.");
             }
-            window.AndroidBridgeSaver.saveConfigFile(rawConfig);
         }
+    });
 
-        if (window.AndroidMenuBridge && typeof window.AndroidMenuBridge.closeMenu === 'function') {
-            window.AndroidMenuBridge.closeMenu();
-        }
-
-        if (window.AndroidBridgeSaver && typeof window.AndroidBridgeSaver.restartApp === 'function') {
-            window.AndroidBridgeSaver.restartApp();
-        } else {
-            location.reload();
-        }
-        return;
-    }
-
-    // 2. Ako je izabran lokalni HTML fajl preko foldera
-    if (selectedFileObject) {
-        // Koristimo Java metodu za brisanje startURL-a iz konfiguracije
-        if (window.AndroidBridgeSaver && typeof window.AndroidBridgeSaver.clearStartUrl === 'function') {
-            window.AndroidBridgeSaver.clearStartUrl();
-        }
-
-        await clearSavedApp();
-
-        const reader = new FileReader();
-        reader.onload = async function(e) {
-            const htmlContent = e.target.result;
-            await saveApp(htmlContent, selectedFileObject.name);
-
-            if (window.AndroidMenuBridge && typeof window.AndroidMenuBridge.closeMenu === 'function') {
-                window.AndroidMenuBridge.closeMenu();
-            }
-
-            if (window.AndroidBridgeSaver && typeof window.AndroidBridgeSaver.reloadMainApp === 'function') {
-                window.AndroidBridgeSaver.reloadMainApp();
-            } else {
-                location.reload();
-            }
-        };
-        reader.readAsText(selectedFileObject);
-        return;
-    }
-
-    alert("Please enter a valid URL (https://...) or select a local HTML file via folder.");
+    fileInput.click();
 });
 
 document.getElementById("exitBtn").addEventListener("click", function(){
